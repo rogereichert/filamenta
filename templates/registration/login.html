@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Entrar • Filamenta</title>
+  </head>
+
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <!-- Decorative background (mesmo clima do app) -->
+    <div class="pointer-events-none fixed inset-0 -z-10">
+      <div class="absolute inset-0 bg-[radial-gradient(1100px_600px_at_20%_-10%,rgba(139,92,246,0.25),transparent_60%),radial-gradient(900px_500px_at_80%_0%,rgba(16,185,129,0.12),transparent_55%),radial-gradient(900px_600px_at_50%_110%,rgba(59,130,246,0.12),transparent_55%)]"></div>
+      <div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,6,23,0.7),rgba(2,6,23,1))]"></div>
+    </div>
+
+    <main class="min-h-screen flex items-center justify-center px-6">
+      <div class="w-full max-w-md">
+        <div class="mb-6">
+          <div class="flex items-center justify-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-violet-600/20 border border-violet-500/20 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-violet-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-xl font-semibold">Filamenta</div>
+              <div class="text-xs text-slate-400">Acesso ao sistema</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-slate-950/50 backdrop-blur-xl shadow-2xl">
+          <div class="p-6">
+            <h1 class="text-2xl font-semibold">Entrar</h1>
+            <p class="text-sm text-slate-400 mt-1">Use seu usuário e senha para acessar.</p>
+
+            {% if form.errors %}
+              <div class="mt-4 rounded-xl border border-red-500/30 bg-red-600/15 px-4 py-3 text-sm text-red-100">
+                Usuário ou senha inválidos. Tente novamente.
+              </div>
+            {% endif %}
+
+            <form method="post" class="mt-6 space-y-4">
+              {% csrf_token %}
+
+              <div>
+                <label class="text-sm text-slate-300" for="id_username">Usuário</label>
+                <input
+                  type="text"
+                  name="username"
+                  id="id_username"
+                  autocomplete="username"
+                  required
+                  class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+                  placeholder="seu usuário"
+                />
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-slate-300" for="id_password">Senha</label>
+                  <a href="{% url 'password_reset' %}" class="text-xs text-slate-400 hover:text-slate-200">Esqueci a senha</a>
+                </div>
+                <input
+                  type="password"
+                  name="password"
+                  id="id_password"
+                  autocomplete="current-password"
+                  required
+                  class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {% if next %}
+                <input type="hidden" name="next" value="{{ next }}" />
+              {% endif %}
+
+              <button
+                type="submit"
+                class="w-full rounded-xl bg-violet-600 px-4 py-3 font-medium text-white hover:bg-violet-500 transition"
+              >
+                Entrar
+              </button>
+            </form>
+          </div>
+
+          <div class="px-6 pb-6">
+            <div class="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-300">
+              Dica: crie um usuário admin com <span class="font-mono text-slate-100">python manage.py createsuperuser</span>.
+            </div>
+          </div>
+        </div>
+
+        <p class="text-center text-xs text-slate-500 mt-6">© {% now "Y" %} Filamenta</p>
+      </div>
+    </main>
+  </body>
+</html>

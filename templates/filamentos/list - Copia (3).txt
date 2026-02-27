@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} | Filamentos{% endblock %}
+{% block header %}{{ titulo }}{% endblock %}
+{% block subheader %}Cadastro e ajuste de estoque do rolo{% endblock %}
+
+{% block content %}
+
+  <form method="post" class="max-w-2xl space-y-4">
+    {% csrf_token %}
+
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
+
+      <div>
+        <label class="text-sm text-slate-300">Nome do rolo *</label>
+        {{ form.nome }}
+        {% if form.nome.errors %}<p class="text-sm text-red-300 mt-1">{{ form.nome.errors|striptags }}</p>{% endif %}
+        <p class="text-xs text-slate-500 mt-1">Sugestão: "PLA Laranja - Rolo 01"</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm text-slate-300">Material *</label>
+          {{ form.material }}
+          {% if form.material.errors %}<p class="text-sm text-red-300 mt-1">{{ form.material.errors|striptags }}</p>{% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">Cor</label>
+          {{ form.cor }}
+          {% if form.cor.errors %}<p class="text-sm text-red-300 mt-1">{{ form.cor.errors|striptags }}</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm text-slate-300">Peso inicial (g)</label>
+          {{ form.peso_inicial_g }}
+          {% if form.peso_inicial_g.errors %}<p class="text-sm text-red-300 mt-1">{{ form.peso_inicial_g.errors|striptags }}</p>{% endif %}
+          <p class="text-xs text-slate-500 mt-1">Ex: rolo novo normalmente 1000g.</p>
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">Peso atual (g)</label>
+          {{ form.peso_atual_g }}
+          {% if form.peso_atual_g.errors %}<p class="text-sm text-red-300 mt-1">{{ form.peso_atual_g.errors|striptags }}</p>{% endif %}
+          <p class="text-xs text-slate-500 mt-1">Se deixar 0, o sistema usa o peso inicial automaticamente.</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-sm text-slate-300">Preço por kg (opcional)</label>
+        {{ form.preco_kg }}
+        {% if form.preco_kg.errors %}<p class="text-sm text-red-300 mt-1">{{ form.preco_kg.errors|striptags }}</p>{% endif %}
+      </div>
+
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition font-medium">
+        Salvar
+      </button>
+
+      <a href="{% url 'filamentos:list' %}"
+         class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition">
+        Cancelar
+      </a>
+    </div>
+
+  </form>
+
+{% endblock %}

@@ -1,0 +1,259 @@
+{% with url_name=request.resolver_match.view_name|default_if_none:"" %}
+  <!DOCTYPE html>
+  <html lang="pt-br">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <script src="https://cdn.tailwindcss.com"></script>
+      <title>
+        {% block title %}Filamenta{% endblock %}
+      </title>
+      <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    </head>
+
+    <body class="min-h-screen bg-slate-950 text-slate-100">
+      
+      <!-- Decorative background -->
+      <div class="pointer-events-none fixed inset-0 -z-10">
+        <div class="absolute inset-0 bg-[radial-gradient(1100px_600px_at_20%_-10%,rgba(139,92,246,0.25),transparent_60%),radial-gradient(900px_500px_at_80%_0%,rgba(16,185,129,0.12),transparent_55%),radial-gradient(900px_600px_at_50%_110%,rgba(59,130,246,0.12),transparent_55%)]"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,6,23,0.7),rgba(2,6,23,1))]"></div>
+      </div>
+
+      <div class="min-h-screen flex">
+        <!-- SIDEBAR -->
+        <aside class="w-64 border-r border-white/10 bg-slate-950/50 backdrop-blur-xl">
+          <div class="p-5">
+            <div class="text-xl font-bold">Filamenta</div>
+            <div class="text-xs text-slate-400">Sistema interno</div>
+</div>
+
+          <nav class="px-3 pb-6 space-y-1">
+            <!-- Dashboard -->
+            <a href="{% url 'core:dashboard' %}"
+              class="group flex items-center gap-3 px-4 py-2 rounded-xl transition
+              {% if url_name == 'core:dashboard' %}
+                bg-violet-600/10 border border-violet-500/20
+              {% else %}
+                hover:bg-white/5
+              {% endif %}">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 transition
+                {% if url_name == 'core:dashboard' %}
+                  text-violet-200
+                {% else %}
+                  text-slate-400 group-hover:text-slate-200
+                {% endif %}"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M3 3v18h18M7 14v4M11 10v8M15 6v12M19 12v6" />
+              </svg>
+
+              <span class="{% if url_name == 'core:dashboard' %}text-slate-100{% else %}text-slate-200{% endif %}">
+                Dashboard
+              </span>
+            </a>
+
+            <!-- Section -->
+            <div class="mt-3 px-4 text-xs uppercase tracking-wide text-slate-500">Cadastros</div>
+
+            <!-- Clientes -->
+            <a href="{% url 'clientes:list' %}"
+              class="group flex items-center gap-3 px-4 py-2 rounded-xl transition
+              {% if url_name|slice:':8' == 'clientes' %}
+                bg-violet-600/10 border border-violet-500/20
+              {% else %}
+                hover:bg-white/5
+              {% endif %}">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 transition
+                {% if url_name|slice:':8' == 'clientes' %}
+                  text-violet-200
+                {% else %}
+                  text-slate-400 group-hover:text-slate-200
+                {% endif %}"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M15 7.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M4.5 20.25a7.5 7.5 0 0115 0" />
+              </svg>
+
+              <span class="{% if url_name|slice:':8' == 'clientes' %}text-slate-100{% else %}text-slate-200{% endif %}">
+                Clientes
+              </span>
+            </a>
+
+            <!-- Filamentos -->
+            <a href="{% url 'filamentos:list' %}"
+              class="group flex items-center gap-3 px-4 py-2 rounded-xl transition
+              {% if url_name|slice:':11' == 'filamentos:' %}
+                bg-violet-600/10 border border-violet-500/20
+              {% else %}
+                hover:bg-white/5
+              {% endif %}">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 transition
+                {% if url_name|slice:':11' == 'filamentos:' %}
+                  text-violet-200
+                {% else %}
+                  text-slate-400 group-hover:text-slate-200
+                {% endif %}"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M6 7.5a3 3 0 016 0v1.5a3 3 0 01-6 0V7.5zM12 7.5a3 3 0 016 0v1.5a3 3 0 01-6 0V7.5zM6 13.5h12M7.5 13.5v6M16.5 13.5v6" />
+              </svg>
+
+              <span class="{% if url_name|slice:':11' == 'filamentos:' %}text-slate-100{% else %}text-slate-200{% endif %}">
+                Filamentos
+              </span>
+            </a>
+
+            <!-- Pedidos (ativo em pedidos:* EXCETO pedidos:calcular) -->
+            <a href="{% url 'pedidos:list' %}"
+              class="group flex items-center gap-3 px-4 py-2 rounded-xl transition
+              {% if url_name|slice:':7' == 'pedidos' and url_name != 'pedidos:calcular' %}
+                bg-violet-600/10 border border-violet-500/20
+              {% else %}
+                hover:bg-white/5
+              {% endif %}">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 transition
+                {% if url_name|slice:':7' == 'pedidos' and url_name != 'pedidos:calcular' %}
+                  text-violet-200
+                {% else %}
+                  text-slate-400 group-hover:text-slate-200
+                {% endif %}"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M9 3.75h6M9 3.75a1.5 1.5 0 00-1.5 1.5v.75h9v-.75A1.5 1.5 0 0015 3.75M6 7.5h12v12.75A1.5 1.5 0 0116.5 21h-9A1.5 1.5 0 016 20.25V7.5z" />
+              </svg>
+
+              <span class="{% if url_name|slice:':7' == 'pedidos' and url_name != 'pedidos:calcular' %}text-slate-100{% else %}text-slate-200{% endif %}">
+                Pedidos
+              </span>
+            </a>
+
+            <!-- Calcular Pedido -->
+            <a href="{% url 'pedidos:calcular' %}"
+              class="group flex items-center gap-3 px-4 py-2 rounded-xl transition
+              {% if url_name == 'pedidos:calcular' %}
+                bg-violet-600/10 border border-violet-500/20
+              {% else %}
+                hover:bg-white/5
+              {% endif %}">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 transition
+                {% if url_name == 'pedidos:calcular' %}
+                  text-violet-200
+                {% else %}
+                  text-slate-400 group-hover:text-slate-200
+                {% endif %}"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M12 6.75v10.5m5.25-5.25H6.75M6.75 4.5h10.5A2.25 2.25 0 0119.5 6.75v10.5A2.25 2.25 0 0117.25 19.5H6.75A2.25 2.25 0 014.5 17.25V6.75A2.25 2.25 0 016.75 4.5z" />
+              </svg>
+
+              <span class="{% if url_name == 'pedidos:calcular' %}text-slate-100{% else %}text-slate-200{% endif %}">
+                Calcular Pedido
+              </span>
+            </a>
+          </nav>
+        </aside>
+
+        <!-- CONTENT -->
+        <main class="flex-1">
+          <header class="p-6 border-b border-white/10 bg-slate-950/40 backdrop-blur-xl sticky top-0 z-10">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h1 class="text-2xl font-semibold">
+                  {% block header %}Dashboard{% endblock %}
+                </h1>
+                <p class="text-slate-400 mt-1">
+                  {% block subheader %}{% endblock %}
+                </p>
+              </div>
+
+              {% if request.user.is_authenticated %}
+                <div class="flex items-center gap-3">
+                  <div class="hidden sm:block text-right">
+                    <div class="text-sm text-slate-200">{{ request.user.get_username }}</div>
+                    <div class="text-xs text-slate-500">Conectado</div>
+                  </div>
+                  <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 hover:bg-white/10 transition"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 12H9m9 0l-3-3m3 3l-3 3" />
+                      </svg>
+                      Sair
+                    </button>
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+          </header>
+
+          <section class="p-6 md:p-8 w-full">
+            {% if messages %}
+              <div class="mb-4 space-y-2">
+                {% for message in messages %}
+                  <div class="px-4 py-2 rounded-xl border text-sm
+                    {% if 'success' in message.tags %}
+                      bg-emerald-600/20 border-emerald-500/30
+                    {% elif 'error' in message.tags %}
+                      bg-red-600/20 border-red-500/30
+                    {% elif 'warning' in message.tags %}
+                      bg-amber-600/20 border-amber-500/30
+                    {% else %}
+                      bg-violet-600/20 border-violet-500/30
+                    {% endif %}">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+          </section>
+        </main>
+      </div>
+
+      <script>
+        // UX: evita clique duplo e mostra estado "Enviando..." em botões de submit.
+        document.addEventListener('submit', function (e) {
+          const form = e.target;
+          if (!form || !form.matches('[data-loading-form]')) return;
+
+          const btn = form.querySelector('[data-loading-btn]');
+          if (!btn) return;
+
+          // já clicou
+          if (btn.dataset.loading === '1') {
+            e.preventDefault();
+            return;
+          }
+          btn.dataset.loading = '1';
+
+          const spinner = btn.querySelector('[data-loading-spinner]');
+          const label = btn.querySelector('[data-loading-label]');
+          const loadingText = btn.getAttribute('data-loading-text') || 'Enviando...';
+
+          if (spinner) spinner.classList.remove('hidden');
+          // esconde ícone original (mantém spinner)
+          const icons = btn.querySelectorAll('svg');
+          icons.forEach((svg) => {
+            if (!svg.hasAttribute('data-loading-spinner')) svg.classList.add('opacity-60');
+          });
+
+          if (label) label.textContent = loadingText;
+          btn.disabled = true;
+          btn.classList.add('cursor-not-allowed', 'opacity-80');
+        }, true);
+      </script>
+    </body>
+  </html>
+{% endwith %}

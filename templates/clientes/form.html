@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block header %}{{ titulo }}{% endblock %}
+{% block subheader %}Preencha os dados do cliente{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl">
+  <form method="post" class="space-y-5">
+    {% csrf_token %}
+
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-4">
+      <div>
+        <label class="text-sm text-slate-300">Nome <span class="text-red-400">*</span></label>
+        {{ form.nome }}
+        {% if form.nome.errors %}
+          <p class="text-sm text-red-400 mt-1">{{ form.nome.errors|striptags }}</p>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm text-slate-300">Telefone</label>
+          {{ form.telefone }}
+          {% if form.telefone.errors %}
+            <p class="text-sm text-red-400 mt-1">{{ form.telefone.errors|striptags }}</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <p class="text-sm text-red-400 mt-1">{{ form.email.errors|striptags }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 transition font-medium">
+        Salvar
+      </button>
+
+      <a href="{% url 'clientes:list' %}"
+         class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 transition">
+        Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function () {
+    const input = document.querySelector('input[name="telefone"]');
+    if (!input) return;
+
+    function onlyDigits(v) {
+      return (v || "").replace(/\D/g, "");
+    }
+
+    function formatBRPhone(digits) {
+      // (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+      if (digits.length <= 10) {
+        return digits.replace(/^(\d{2})(\d{0,4})(\d{0,4}).*/, (m, a, b, c) => {
+          return b ? `(${a}) ${b}${c ? "-" + c : ""}` : `(${a}`;
+        });
+      }
+      return digits.replace(/^(\d{2})(\d{0,5})(\d{0,4}).*/, (m, a, b, c) => {
+        return b ? `(${a}) ${b}${c ? "-" + c : ""}` : `(${a}`;
+      });
+    }
+
+    // ao digitar: mascara
+    input.addEventListener("input", () => {
+      const digits = onlyDigits(input.value).slice(0, 11);
+      input.value = formatBRPhone(digits);
+    });
+
+    // ao carregar: se vier só número do banco, já mascara
+    input.value = formatBRPhone(onlyDigits(input.value));
+  })();
+</script>
+
+{% endblock %}

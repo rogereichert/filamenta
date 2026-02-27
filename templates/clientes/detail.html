@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load formatters %}
+
+{% block title %}
+  {{ cliente.nome }} | Clientes
+{% endblock %}
+{% block header %}
+  {{ cliente.nome }}
+{% endblock %}
+{% block subheader %}
+  Detalhes do cliente
+{% endblock %}
+
+{% block content %}
+  <!-- Top actions -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+    <div class="text-sm text-slate-400">
+      Cadastrado em
+      <span class="text-slate-200 font-medium">{{ cliente.created_at|date:'d/m/Y H:i' }}</span>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <a href="{% url 'clientes:update' cliente.id %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-sm transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.862 3.487a2.1 2.1 0 012.97 2.97L8.25 18.04l-4.5 1.125 1.125-4.5L16.862 3.487z" />
+        </svg>Editar
+      </a>
+
+      <a href="{% url 'clientes:delete' cliente.id %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 text-red-300 text-sm transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 9v9m4.5-9v9M4.5 7.5h15M9 7.5V6a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 6v1.5m-9 0l1.2 13.2A1.5 1.5 0 007.7 22h8.6a1.5 1.5 0 001.5-1.3L19.5 7.5" />
+        </svg>Excluir
+      </a>
+
+      <a href="{% url 'clientes:list' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-sm transition">Voltar</a>
+    </div>
+  </div>
+
+  <!-- Info cards -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Telefone -->
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div class="text-sm text-slate-400 mb-2">Telefone</div>
+
+      {% if cliente.telefone %}
+        <div class="flex items-center justify-between">
+          <a href="https://wa.me/55{{ cliente.telefone }}" target="_blank" class="text-lg font-semibold text-violet-400 hover:text-violet-300 transition">{{ cliente.telefone|telefone_br }}</a>
+
+          <button onclick="copiarTelefone()" class="text-xs px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition">Copiar</button>
+        </div>
+      {% else %}
+        <div class="text-lg font-semibold text-slate-500">-</div>
+      {% endif %}
+    </div>
+
+    <!-- Email -->
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div class="text-sm text-slate-400 mb-2">Email</div>
+
+      {% if cliente.email %}
+        <a href="mailto:{{ cliente.email }}" class="text-lg font-semibold break-all text-violet-400 hover:text-violet-300 transition">{{ cliente.email }}</a>
+      {% else %}
+        <div class="text-lg font-semibold text-slate-500">-</div>
+      {% endif %}
+    </div>
+
+    <!-- Resumo -->
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div class="text-sm text-slate-400 mb-2">Resumo</div>
+
+      <div class="text-sm text-slate-300 space-y-1">
+        <div>
+          Pedidos:
+          <span class="text-slate-100 font-medium">{{ total_pedidos }}</span>
+        </div>
+
+        <div>
+          Total gasto:
+          <span class="text-slate-100 font-medium">R$ {{ total_gasto|floatformat:2 }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pedidos -->
+  <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-lg font-semibold">Pedidos</h3>
+        <div class="mt-1 text-sm text-slate-400">Histórico de pedidos deste cliente.</div>
+      </div>
+
+      <!-- ✅ Novo pedido com cliente pré-selecionado -->
+      <a href="{% url 'pedidos:create' %}?cliente={{ cliente.id }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 transition font-medium">
+        <span class="text-lg leading-none">+</span>
+        Novo pedido
+      </a>
+    </div>
+
+    {% if pedidos %}
+      <div class="mt-4 overflow-hidden rounded-2xl border border-white/10">
+        <table class="w-full text-sm">
+          <thead class="bg-white/5 text-slate-300">
+            <tr>
+              <th class="text-left py-3 pl-4 pr-3">Pedido</th>
+              <th class="text-left p-3">Status</th>
+              <th class="text-left p-3">Criado</th>
+              <th class="text-left p-3">Atualizado</th>
+              <th class="text-right py-3 pr-4 pl-3 w-40">Ações</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for p in pedidos %}
+              <tr class="border-t border-white/10 hover:bg-white/[0.03] transition">
+                <td class="py-3 pl-4 pr-3 font-medium">#{{ p.id }}</td>
+
+                <td class="p-3">
+                  {% if p.status == 'entregue' %}
+                    <span class="text-xs px-2 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-600/10 text-emerald-300">{{ p.get_status_display }}</span>
+                  {% elif p.status == 'em_producao' %}
+                    <span class="text-xs px-2 py-0.5 rounded-full border border-violet-500/20 bg-violet-600/10 text-violet-300">{{ p.get_status_display }}</span>
+                  {% elif p.status == 'aberto' %}
+                    <span class="text-xs px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-slate-200">{{ p.get_status_display }}</span>
+                  {% elif p.status == 'orcamento' %}
+                    <span class="text-xs px-2 py-0.5 rounded-full border border-amber-500/20 bg-amber-600/10 text-amber-300">{{ p.get_status_display }}</span>
+                  {% elif p.status == 'rascunho' %}
+                    <span class="text-xs px-2 py-0.5 rounded-full border border-yellow-500/20 bg-yellow-600/10 text-yellow-200">{{ p.get_status_display }}</span>
+                  {% else %}
+                    <span class="text-xs px-2 py-0.5 rounded-full border border-red-500/20 bg-red-600/10 text-red-300">{{ p.get_status_display }}</span>
+                  {% endif %}
+                </td>
+
+                <td class="p-3 text-slate-400">{{ p.created_at|date:'d/m/Y H:i' }}</td>
+
+                <td class="p-3 text-slate-400">{{ p.updated_at|date:'d/m/Y H:i' }}</td>
+
+                <td class="py-3 pr-4 pl-3">
+                  <div class="flex justify-end gap-2">
+                    <a href="{% url 'pedidos:update' p.id %}" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-sm transition">Editar</a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="mt-4 px-4 py-3 rounded-xl border border-white/10 bg-slate-900/40 text-slate-300">Nenhum pedido registrado ainda.</div>
+    {% endif %}
+  </div>
+
+  <script>
+    function copiarTelefone() {
+      const telefone = '{{ cliente.telefone }}'
+      navigator.clipboard.writeText(telefone)
+    }
+  </script>
+{% endblock %}

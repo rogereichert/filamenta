@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}{% if modo == "novo" %}Novo Pedido{% else %}Editar Pedido{% endif %} | Filamenta{% endblock %}
+{% block header %}{% if modo == "novo" %}Novo Pedido{% else %}Editar Pedido{% endif %}{% endblock %}
+{% block subheader %}Dados do pedido e itens{% endblock %}
+
+{% block content %}
+
+<form method="post" class="space-y-5">
+  {% csrf_token %}
+
+  {# ✅ Erros gerais do pedido #}
+  {% if form.non_field_errors %}
+    <div class="rounded-xl border border-red-500/20 bg-red-600/10 text-red-200 px-4 py-3">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+
+  {# ✅ Erros gerais do formset (itens) #}
+  {% if itens_formset.non_form_errors %}
+    <div class="rounded-xl border border-red-500/20 bg-red-600/10 text-red-200 px-4 py-3">
+      {{ itens_formset.non_form_errors }}
+    </div>
+  {% endif %}
+
+  <!-- Dados do pedido -->
+  <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div class="grid md:grid-cols-2 gap-4">
+
+      <div>
+        <label class="text-sm text-slate-400">Cliente *</label>
+        {{ form.cliente|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
+        {% if form.cliente.errors %}
+          <div class="mt-1 text-xs text-red-300">{{ form.cliente.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="text-sm text-slate-400">Status *</label>
+        {{ form.status|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
+        {% if form.status.errors %}
+          <div class="mt-1 text-xs text-red-300">{{ form.status.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="text-sm text-slate-400">Título / descrição geral</label>
+        {{ form.titulo|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
+        {% if form.titulo.errors %}
+          <div class="mt-1 text-xs text-red-300">{{ form.titulo.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="text-sm text-slate-400">Observações</label>
+        {{ form.observacoes|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
+        {% if form.observacoes.errors %}
+          <div class="mt-1 text-xs text-red-300">{{ form.observacoes.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="text-sm text-slate-400">Desconto (R$)</label>
+        {{ form.desconto|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
+        {% if form.desconto.errors %}
+          <div class="mt-1 text-xs text-red-300">{{ form.desconto.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="text-sm text-slate-400">Frete (R$)</label>
+        {{ form.frete|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
+        {% if form.frete.errors %}
+          <div class="mt-1 text-xs text-red-300">{{ form.frete.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="text-sm text-slate-400">Taxa extra (R$)</label>
+        {{ form.taxa_extra|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
+        {% if form.taxa_extra.errors %}
+          <div class="mt-1 text-xs text-red-300">{{ form.taxa_extra.errors|striptags }}</div>
+        {% endif %}
+      </div>
+
+      <div class="flex items-end">
+        {% if pedido %}
+          <div class="ml-auto text-right">
+            <div class="text-xs text-slate-400">Total do pedido</div>
+            <div class="text-2xl font-bold text-slate-100">R$ {{ pedido.valor_total|floatformat:2 }}</div>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Itens -->
+  <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-lg font-semibold">Itens do pedido</div>
+        <div class="text-sm text-slate-400">Adicione Superman, Aquaman etc com quantidade e preço.</div>
+      </div>
+    </div>
+
+    <div class="mt-4 space-y-3">
+      {{ itens_formset.management_form }}
+
+      {% for f in itens_formset.forms %}
+        <div class="rounded-xl border border-white/10 bg-slate-900/30 p-4">
+
+          {# ✅ FUNDAMENTAL: hidden fields do formset (id do item, etc) #}
+          {% for h in f.hidden_fields %}{{ h }}{% endfor %}
+
+          <div class="grid md:grid-cols-12 gap-3 items-end">
+
+            <div class="md:col-span-6">
+              <label class="text-xs text-slate-400">Descrição</label>
+              {{ f.descricao|add_class:"w-full mt-1 px-3 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none" }}
+              {% if f.descricao.errors %}
+                <div class="mt-1 text-xs text-red-300">{{ f.descricao.errors|striptags }}</div>
+              {% endif %}
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="text-xs text-slate-400">Qtd</label>
+              {{ f.quantidade|add_class:"w-full mt-1 px-3 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none" }}
+              {% if f.quantidade.errors %}
+                <div class="mt-1 text-xs text-red-300">{{ f.quantidade.errors|striptags }}</div>
+              {% endif %}
+            </div>
+
+            <div class="md:col-span-3">
+              <label class="text-xs text-slate-400">Preço unitário (R$)</label>
+              {{ f.preco_unitario|add_class:"w-full mt-1 px-3 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none" }}
+              {% if f.preco_unitario.errors %}
+                <div class="mt-1 text-xs text-red-300">{{ f.preco_unitario.errors|striptags }}</div>
+              {% endif %}
+            </div>
+
+            <div class="md:col-span-1 flex justify-end">
+              {% if f.instance.pk %}
+                <label class="text-xs text-slate-400">Excluir</label>
+                <div class="mt-2">{{ f.DELETE }}</div>
+              {% endif %}
+            </div>
+
+          </div>
+
+          {% if f.non_field_errors %}
+            <div class="mt-2 text-sm text-red-300">{{ f.non_field_errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Ações -->
+  <div class="flex gap-2">
+    <button class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 transition font-medium">
+      Salvar
+    </button>
+    <a href="{% url 'pedidos:list' %}"
+       class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition">
+      Cancelar
+    </a>
+  </div>
+</form>
+
+{% endblock %}

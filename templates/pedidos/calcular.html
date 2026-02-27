@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Calcular Pedido | Filamenta{% endblock %}
+{% block header %}Calcular Pedido{% endblock %}
+{% block subheader %}Cole os dados do slicer (gramas e tempo) para obter custo real e preço sugerido.{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- FORM -->
+  <div class="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div class="rounded-xl border border-violet-500/20 bg-violet-600/10 p-4">
+        <div class="flex items-center justify-between">
+          <div class="text-sm font-semibold text-violet-200">Salvar como orçamento</div>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-violet-200/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7.5h6M9 10.5h6M9 13.5h6M4.5 6.75A2.25 2.25 0 016.75 4.5h10.5A2.25 2.25 0 0119.5 6.75v10.5A2.25 2.25 0 0117.25 19.5H6.75A2.25 2.25 0 014.5 17.25V6.75z" />
+          </svg>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="text-sm text-slate-300">{{ form.cliente.label }}</label>
+            {% render_field form.cliente class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" %}
+            {% if form.cliente.errors %}<div class="text-sm text-red-400 mt-1">{{ form.cliente.errors }}</div>{% endif %}
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="text-sm text-slate-300">{{ form.titulo.label }}</label>
+            {% render_field form.titulo class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" placeholder="Ex: Esfera 80mm" %}
+            {% if form.titulo.errors %}<div class="text-sm text-red-400 mt-1">{{ form.titulo.errors }}</div>{% endif %}
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="text-sm text-slate-300">{{ form.item_descricao.label }}</label>
+            {% render_field form.item_descricao class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" placeholder="Ex: Esfera 80mm (PLA)" %}
+            {% if form.item_descricao.errors %}<div class="text-sm text-red-400 mt-1">{{ form.item_descricao.errors }}</div>{% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm text-slate-300">{{ form.quantidade.label }}</label>
+            {% render_field form.quantidade class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" %}
+            {% if form.quantidade.errors %}<div class="text-sm text-red-400 mt-1">{{ form.quantidade.errors }}</div>{% endif %}
+          </div>
+
+          <div>
+            <label class="text-sm text-slate-300">{{ form.preco_venda_manual.label }}</label>
+            {% render_field form.preco_venda_manual class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" placeholder="(opcional)" %}
+            {% if form.preco_venda_manual.errors %}<div class="text-sm text-red-400 mt-1">{{ form.preco_venda_manual.errors }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="text-sm text-slate-300">Filamento (opcional)</label>
+          {% render_field form.filamento class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" %}
+          <p class="text-xs text-slate-500 mt-1">Se selecionar um filamento cadastrado, o preço/kg pode ser usado automaticamente.</p>
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">{{ form.preco_kg.label }}</label>
+          {% render_field form.preco_kg class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" %}
+          {% if form.preco_kg.errors %}<div class="text-sm text-red-400 mt-1">{{ form.preco_kg.errors }}</div>{% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">{{ form.gramas_total.label }}</label>
+          {% render_field form.gramas_total class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" placeholder="Ex: 68.02" %}
+          {% if form.gramas_total.errors %}<div class="text-sm text-red-400 mt-1">{{ form.gramas_total.errors }}</div>{% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">{{ form.tempo_total.label }}</label>
+          {% render_field form.tempo_total class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" placeholder="Ex: 11h36m ou 11:36" %}
+          {% if form.tempo_total.errors %}<div class="text-sm text-red-400 mt-1">{{ form.tempo_total.errors }}</div>{% endif %}
+          <p class="text-xs text-slate-500 mt-1">Aceita: 11h36m, 11:36, 11.6</p>
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">{{ form.desperdicio_pct.label }}</label>
+          {% render_field form.desperdicio_pct class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" %}
+          {% if form.desperdicio_pct.errors %}<div class="text-sm text-red-400 mt-1">{{ form.desperdicio_pct.errors }}</div>{% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">{{ form.custo_hora_maquina.label }}</label>
+          {% render_field form.custo_hora_maquina class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" %}
+          {% if form.custo_hora_maquina.errors %}<div class="text-sm text-red-400 mt-1">{{ form.custo_hora_maquina.errors }}</div>{% endif %}
+          <p class="text-xs text-slate-500 mt-1">Sugestão inicial: 1,30/h (depreciação + manutenção).</p>
+        </div>
+
+        <div>
+          <label class="text-sm text-slate-300">{{ form.energia_fixa.label }}</label>
+          {% render_field form.energia_fixa class+="mt-1 w-full rounded-xl bg-slate-950/40 border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500/40" %}
+          {% if form.energia_fixa.errors %}<div class="text-sm text-red-400 mt-1">{{ form.energia_fixa.errors }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 pt-1">
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 font-semibold shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-violet-400/70"
+          name="acao"
+          value="calcular"
+        >
+          Calcular
+        </button>
+
+        {% if resultado %}
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 font-semibold shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
+            name="acao"
+            value="criar_25"
+          >
+            Criar orçamento (2,5×)
+          </button>
+
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center rounded-xl bg-emerald-700 hover:bg-emerald-600 px-4 py-2 font-semibold shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
+            name="acao"
+            value="criar_3"
+          >
+            Criar orçamento (3×)
+          </button>
+
+          <button
+            type="submit"
+            class="inline-flex items-center justify-center rounded-xl bg-slate-700 hover:bg-slate-600 px-4 py-2 font-semibold shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-slate-400/60"
+            name="acao"
+            value="criar_manual"
+          >
+            Criar orçamento (manual)
+          </button>
+        {% endif %}
+
+        <a href="{% url 'pedidos:calcular' %}" class="text-sm text-slate-300 hover:text-white underline-offset-4 hover:underline">Limpar</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm">
+    {% if resultado %}
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-lg font-bold text-slate-100">Custo total estimado</h2>
+        <div class="text-xs text-slate-400">
+          {{ resultado.gramas_cobradas|floatformat:2 }} g • {{ resultado.tempo_horas|floatformat:2 }} h
+        </div>
+      </div>
+
+      <div class="mt-4 overflow-hidden rounded-xl border border-white/10">
+        <table class="w-full text-sm">
+          <thead class="bg-white/5 text-slate-300">
+            <tr>
+              <th class="text-left px-4 py-2">Item</th>
+              <th class="text-right px-4 py-2">Valor</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/10">
+            <tr>
+              <td class="px-4 py-3 text-slate-200">Material</td>
+              <td class="px-4 py-3 text-right text-slate-100">R$ {{ resultado.custo_material }}</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3 text-slate-200">Energia</td>
+              <td class="px-4 py-3 text-right text-slate-100">R$ {{ resultado.custo_energia }}</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3 text-slate-200">Máquina</td>
+              <td class="px-4 py-3 text-right text-slate-100">R$ {{ resultado.custo_maquina }}</td>
+            </tr>
+
+            <tr class="bg-violet-600/20 font-bold text-violet-100">
+              <td class="px-4 py-3">Total</td>
+              <td class="px-4 py-3 text-right text-lg">R$ {{ resultado.custo_total }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mt-5 rounded-xl border border-violet-500/20 bg-violet-600/10 p-4">
+        <div class="text-sm text-violet-200 font-semibold">Preço ideal de venda</div>
+
+        <div class="mt-2 text-sm text-slate-300">
+          <div class="flex items-center justify-between py-1">
+            <span class="text-slate-300">Mínimo saudável (2,5×)</span>
+            <span class="font-bold text-emerald-400 text-lg">R$ {{ resultado.preco_25 }}</span>
+          </div>
+          <div class="flex items-center justify-between py-1">
+            <span class="text-slate-300">Ideal (3×)</span>
+            <span class="font-bold text-emerald-400 text-lg">R$ {{ resultado.preco_3 }}</span>
+          </div>
+        </div>
+
+        <div class="mt-3 text-xs text-slate-400">
+          Dica: use 2,5× como piso saudável e 3× como referência ideal.
+        </div>
+      </div>
+
+    {% else %}
+      <div class="text-slate-300">
+        Preencha os dados e clique em <span class="font-semibold text-violet-200">Calcular</span>.
+      </div>
+      <div class="mt-3 text-sm text-slate-500">
+        Dica: do slicer, use o <b>Total (g)</b> e o <b>Tempo total</b>.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos | Filamenta{% endblock %}
+{% block header %}Pedidos{% endblock %}
+{% block subheader %}Gestão de pedidos e produção{% endblock %}
+
+{% block content %}
+
+  <!-- Barra de ações (Busca + Status + Ordenação + CTA) -->
+  <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 mb-4">
+    <div class="flex flex-col lg:flex-row gap-3 flex-1">
+
+      <!-- Busca -->
+      <form method="get" class="flex-1">
+        <div class="relative">
+          <input
+            name="q"
+            value="{{ q }}"
+            placeholder="Buscar por cliente ou # do pedido..."
+            class="w-full pl-11 pr-4 py-2 rounded-xl
+                   bg-slate-900/60 border border-white/10
+                   text-slate-100 placeholder:text-slate-500
+                   focus:outline-none focus:ring-2 focus:ring-violet-500/60
+                   focus:border-violet-500/40 transition"
+          />
+
+          <!-- mantém filtros/ordenação -->
+          <input type="hidden" name="status" value="{{ status }}" />
+          <input type="hidden" name="sort" value="{{ sort|default:'recentes' }}" />
+
+          <!-- Ícone de lupa -->
+          <svg xmlns="http://www.w3.org/2000/svg"
+               class="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2"
+               fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M21 21l-4.35-4.35m1.35-5.15a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" />
+          </svg>
+        </div>
+      </form>
+
+      <!-- Filtro Status -->
+      <form method="get" class="w-full md:w-64">
+        <input type="hidden" name="q" value="{{ q }}" />
+        <input type="hidden" name="sort" value="{{ sort|default:'recentes' }}" />
+
+        <select name="status"
+                onchange="this.form.submit()"
+                class="w-full px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10
+                       text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60
+                       focus:border-violet-500/40 transition">
+          <option value="">Status: Todos</option>
+          {% for key,label in status_choices %}
+            <option value="{{ key }}" {% if status == key %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <!-- Ordenação -->
+      <form method="get" class="w-full md:w-64">
+        <input type="hidden" name="q" value="{{ q }}" />
+        <input type="hidden" name="status" value="{{ status }}" />
+
+        <select name="sort"
+                onchange="this.form.submit()"
+                class="w-full px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10
+                       text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60
+                       focus:border-violet-500/40 transition">
+          <option value="recentes" {% if sort|default:"recentes" == "recentes" %}selected{% endif %}>Ordenar: Mais recentes</option>
+          <option value="antigos" {% if sort == "antigos" %}selected{% endif %}>Ordenar: Mais antigos</option>
+          <option value="cliente" {% if sort == "cliente" %}selected{% endif %}>Ordenar: Cliente (A–Z)</option>
+          <option value="status" {% if sort == "status" %}selected{% endif %}>Ordenar: Status</option>
+        </select>
+      </form>
+
+    </div>
+
+    <!-- CTA -->
+    <a href="{% url 'pedidos:create' %}"
+       class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl
+              bg-violet-600 hover:bg-violet-500 transition font-medium">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+      Novo pedido
+    </a>
+  </div>
+
+  <!-- Contador -->
+  <div class="text-sm text-slate-400 mb-3">
+    {% if q or status %}
+      Mostrando <span class="text-slate-200 font-medium">{{ total }}</span> pedidos
+      {% if q %}para "<span class="text-slate-200 font-medium">{{ q }}</span>"{% endif %}
+      {% if status %} (status: <span class="text-slate-200 font-medium">{{ status }}</span>){% endif %}.
+      <a href="{% url 'pedidos:list' %}"
+         class="text-violet-400 hover:text-violet-300 ml-2">Limpar</a>
+    {% else %}
+      Total de pedidos: <span class="text-slate-200 font-medium">{{ total }}</span>
+    {% endif %}
+  </div>
+
+  <!-- Tabela -->
+  <div class="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-white/5 text-slate-300">
+        <tr>
+          <th class="text-left py-3 pl-6 pr-3">Pedido</th>
+          <th class="text-left p-3">Cliente</th>
+          <th class="text-left p-3">Status</th>
+          <th class="text-left p-3">Criado</th>
+          <th class="text-left p-3">Atualizado</th>
+          <th class="text-right py-3 pr-6 pl-3 w-44">Ações</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for p in pedidos %}
+          <tr class="border-t border-white/10 hover:bg-white/[0.03] transition">
+            <td class="py-3 pl-6 pr-3 font-medium">
+              <a href="{% url 'pedidos:detail' p.id %}" class="hover:text-violet-300 transition">
+                #{{ p.id }}
+              </a>
+            </td>
+
+            <td class="p-3">
+              <div class="text-slate-100 font-medium">{{ p.cliente.nome }}</div>
+              {% if p.cliente.telefone %}
+                <div class="text-xs text-slate-500">{{ p.cliente.telefone }}</div>
+              {% endif %}
+            </td>
+
+            <td class="p-3">
+              {% if p.status == "rascunho" %}
+                <span class="text-xs px-2 py-0.5 rounded-full border border-slate-500/20 bg-slate-600/10 text-slate-300">Rascunho</span>
+              {% elif p.status == "orcamento" %}
+                <span class="text-xs px-2 py-0.5 rounded-full border border-violet-500/20 bg-violet-600/10 text-violet-300">Orçamento</span>
+              {% elif p.status == "aberto" %}
+                <span class="text-xs px-2 py-0.5 rounded-full border border-cyan-400/20 bg-cyan-500/10 text-cyan-200">Aberto</span>
+              {% elif p.status == "em_producao" %}
+                <span class="text-xs px-2 py-0.5 rounded-full border border-amber-400/25 bg-amber-500/10 text-amber-200">Em produção</span>
+              {% elif p.status == "entregue" %}
+                <span class="text-xs px-2 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-600/10 text-emerald-300">Entregue</span>
+              {% else %}
+                <span class="text-xs px-2 py-0.5 rounded-full border border-red-500/20 bg-red-600/10 text-red-300">Cancelado</span>
+              {% endif %}
+            </td>
+
+            <td class="p-3 text-slate-400">{{ p.created_at|date:"d/m/Y H:i" }}</td>
+            <td class="p-3 text-slate-400">{{ p.updated_at|date:"d/m/Y H:i" }}</td>
+
+            <td class="py-3 pr-6 pl-3">
+              <div class="flex justify-end gap-2">
+                <a href="{% url 'pedidos:detail' p.id %}"
+                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg
+                          bg-white/5 hover:bg-white/10 border border-white/10
+                          text-slate-200 text-sm transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M16.862 3.487a2.1 2.1 0 012.97 2.97L8.25 18.04l-4.5 1.125 1.125-4.5L16.862 3.487z" />
+                  </svg>
+                  Editar
+                </a>
+
+                <a href="{% url 'pedidos:delete' p.id %}"
+                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg
+                          bg-red-600/10 hover:bg-red-600/20 border border-red-500/20
+                          text-red-300 text-sm transition">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M9.75 9v9m4.5-9v9M4.5 7.5h15M9 7.5V6a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 6v1.5m-9 0l1.2 13.2A1.5 1.5 0 007.7 22h8.6a1.5 1.5 0 001.5-1.3L19.5 7.5" />
+                  </svg>
+                  Excluir
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="p-6 text-slate-400" colspan="6">
+              Nenhum pedido encontrado.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginação -->
+  {% if page_obj and page_obj.paginator.num_pages > 1 %}
+    <div class="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div class="text-sm text-slate-400">
+        Página <span class="text-slate-200 font-medium">{{ page_obj.number }}</span>
+        de <span class="text-slate-200 font-medium">{{ page_obj.paginator.num_pages }}</span>
+      </div>
+
+      <div class="flex items-center justify-end gap-2">
+        {% if page_obj.has_previous %}
+          <a href="?q={{ q|urlencode }}&status={{ status }}&sort={{ sort|default:'recentes' }}&page=1"
+             class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition text-sm">
+            Primeiro
+          </a>
+          <a href="?q={{ q|urlencode }}&status={{ status }}&sort={{ sort|default:'recentes' }}&page={{ page_obj.previous_page_number }}"
+             class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition text-sm">
+            Anterior
+          </a>
+        {% else %}
+          <span class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 opacity-50 text-sm">Primeiro</span>
+          <span class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 opacity-50 text-sm">Anterior</span>
+        {% endif %}
+
+        <span class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm">
+          {{ page_obj.number }}
+        </span>
+
+        {% if page_obj.has_next %}
+          <a href="?q={{ q|urlencode }}&status={{ status }}&sort={{ sort|default:'recentes' }}&page={{ page_obj.next_page_number }}"
+             class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition text-sm">
+            Próxima
+          </a>
+          <a href="?q={{ q|urlencode }}&status={{ status }}&sort={{ sort|default:'recentes' }}&page={{ page_obj.paginator.num_pages }}"
+             class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition text-sm">
+            Última
+          </a>
+        {% else %}
+          <span class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 opacity-50 text-sm">Próxima</span>
+          <span class="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 opacity-50 text-sm">Última</span>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
