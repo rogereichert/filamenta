@@ -14,7 +14,10 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from ..models import Pedido
-
+from ..models import Pedido, PedidoItem, PedidoItemFilamento
+from django.db.models import Sum
+from decimal import Decimal, ROUND_HALF_UP
+from .helpers import _to_decimal
 
 def gerar_pedido_pdf_bytes(pedido: Pedido) -> bytes:
     """Gera a Ordem de Serviço (PDF) do pedido com layout mais 'premium'.
