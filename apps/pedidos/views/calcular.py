@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from django.shortcuts import render
+from decimal import Decimal, ROUND_HALF_UP
+
+from django.contrib import messages
+from django.db import transaction
+from django.shortcuts import redirect, render
 
 from ..forms import PedidoCalculoForm
-from .helpers import _calc_orcamento, _to_decimal
-
-
-
+from ..models import Pedido, PedidoItem, PedidoItemFilamento
+from .helpers import _calc_orcamento, _recalc_pedido_total, _to_decimal
 
 
 def pedido_calcular(request):
@@ -14,6 +16,8 @@ def pedido_calcular(request):
     Tela simples para calcular custo (material + energia + máquina) a partir de:
     - gramas (do slicer)
     - tempo total (do slicer)
+
+    Também permite criar um Pedido em modo ORÇAMENTO a partir do resultado.
     """
     resultado = None
 
@@ -24,7 +28,7 @@ def pedido_calcular(request):
 
             filamento = cd.get("filamento")
             preco_kg = cd["preco_kg"]
-            if filamento and filamento.preco_kg:
+            if filamento and getattr(filamento, "preco_kg", None):
                 preco_kg = filamento.preco_kg
 
             desperdicio_pct = cd.get("desperdicio_pct") or Decimal("0")
@@ -48,9 +52,6 @@ def pedido_calcular(request):
             # --- Ação: transformar em Orçamento/Pedido ---
             acao = (request.POST.get("acao") or "").strip()
             if acao in {"criar_25", "criar_3", "criar_manual"}:
-                from decimal import ROUND_HALF_UP
-                from django.db import transaction
-
                 cliente = cd.get("cliente")
                 if not cliente:
                     messages.error(request, "Selecione um cliente para criar o orçamento.")
@@ -75,7 +76,7 @@ def pedido_calcular(request):
                         return render(request, "pedidos/calcular.html", {"form": form, "resultado": resultado})
                     preco_venda = _to_decimal(preco_manual)
 
-                # quantiza para 2 casas
+                # quantiza para 2 casas (preço unitário)
                 preco_venda_q = _to_decimal(preco_venda).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
                 # Para consumo, guarda gramas inteiras (do total cobrado * quantidade)
@@ -84,7 +85,7 @@ def pedido_calcular(request):
                 if gramas_int < 1:
                     gramas_int = 1
 
-                # Observações (SEM variáveis soltas)
+                # Observações
                 obs = (
                     "Cálculo (slicer):\n"
                     f"- Gramas (total): {_to_decimal(gramas).quantize(Decimal('0.01'))} g\n"
@@ -123,19 +124,21 @@ def pedido_calcular(request):
                             gramas_g=gramas_int,
                         )
 
-                    # ✅ recalcula total do pedido do jeito que seu projeto já faz
+                    # ✅ recalcula total do pedido
                     _recalc_pedido_total(pedido)
 
                 messages.success(request, "Orçamento criado! Você já pode ver na lista de pedidos.")
                 return redirect("pedidos:detail", pk=pedido.pk)
+
     else:
-        form = PedidoCalculoForm(initial={
-            "quantidade": 1,
-            "preco_kg": Decimal("120.00"),
-            "custo_hora_maquina": Decimal("1.30"),
-            "energia_fixa": Decimal("0.60"),
-            "desperdicio_pct": Decimal("0.00"),
-        })
+        form = PedidoCalculoForm(
+            initial={
+                "quantidade": 1,
+                "preco_kg": Decimal("120.00"),
+                "custo_hora_maquina": Decimal("1.30"),
+                "energia_fixa": Decimal("0.60"),
+                "desperdicio_pct": Decimal("0.00"),
+            }
+        )
 
     return render(request, "pedidos/calcular.html", {"form": form, "resultado": resultado})
-
