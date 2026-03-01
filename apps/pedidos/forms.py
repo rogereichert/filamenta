@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, BaseInlineFormSet
 from decimal import Decimal
 from django.db import models
 
@@ -74,6 +74,21 @@ class PedidoItemFilamentoForm(forms.ModelForm):
         }
 
 
+def clean_gramas_g(self):
+    gramas = self.cleaned_data.get("gramas_g") or 0
+    filamento = self.cleaned_data.get("filamento")
+    if not filamento:
+        return gramas
+
+    # Validação imediata "simples": não permitir acima do estoque físico atual.
+    # (A validação completa por pedido + reservas acontece ao tentar EM_PRODUÇÃO.)
+    if gramas > filamento.peso_atual_g:
+        raise ValidationError(
+            f"Estoque insuficiente: este filamento tem {filamento.peso_atual_g}g em estoque."
+        )
+    return gramas
+
+
 # ✅ (Opcional) Formsets para edição “tudo em uma tela”
 PedidoItemFormSet = inlineformset_factory(
     parent_model=Pedido,
@@ -83,10 +98,48 @@ PedidoItemFormSet = inlineformset_factory(
     can_delete=True,
 )
 
+
+class BasePedidoItemFilamentoFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+
+        # Soma por filamento no contexto do ITEM (formset pai)
+        totais = {}
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data"):
+                continue
+            if form.cleaned_data.get("DELETE"):
+                continue
+            filamento = form.cleaned_data.get("filamento")
+            gramas = form.cleaned_data.get("gramas_g") or 0
+            if not filamento:
+                continue
+            totais.setdefault(filamento, 0)
+            totais[filamento] += int(gramas)
+
+        # Valida contra estoque disponível (considera reservas de outros pedidos quando possível)
+        pedido = None
+        if getattr(self.instance, "pedido_id", None):
+            pedido = self.instance.pedido
+
+        for filamento, total_g in totais.items():
+            disponivel = (
+                filamento.disponivel_g(exclude_pedido=pedido)
+                if hasattr(filamento, "disponivel_g")
+                else int(filamento.peso_atual_g)
+            )
+            if total_g > disponivel:
+                raise ValidationError(
+                    f"Estoque insuficiente para {filamento}: "
+                    f"você informou {total_g}g, mas o disponível é {disponivel}g."
+                )
+
+
 PedidoItemFilamentoFormSet = inlineformset_factory(
     parent_model=PedidoItem,
     model=PedidoItemFilamento,
     form=PedidoItemFilamentoForm,
+    formset=BasePedidoItemFilamentoFormSet,
     extra=1,
     can_delete=True,
 )

@@ -1,4 +1,7 @@
 from django.db import models
+from django.db.models import Sum
+from django.db.models.functions import Coalesce
+
 
 class Filamento(models.Model):
     MATERIAIS = [
@@ -49,6 +52,24 @@ class Filamento(models.Model):
         if pct < 50:
             return "atencao"
         return "ok"
+
+    # ✅ Reservas/Disponível (para evitar overselling)
+    def reservado_g(self, *, exclude_pedido=None) -> int:
+        """
+        Soma de gramas reservadas (status=RES) para este filamento.
+
+        exclude_pedido: útil para validar/editar o próprio pedido sem "se bloquear".
+        """
+        qs = self.reservas.filter(status="RES")
+        if exclude_pedido is not None:
+            qs = qs.exclude(pedido=exclude_pedido)
+        total = qs.aggregate(total=Coalesce(Sum("gramas_g"), 0))["total"]
+        return int(total or 0)
+
+    def disponivel_g(self, *, exclude_pedido=None) -> int:
+        """Estoque disponível = peso_atual_g - reservado_g."""
+        return max(int(self.peso_atual_g) - int(self.reservado_g(exclude_pedido=exclude_pedido)), 0)
+
 
 
 # ✅ NOVO MODEL — ADICIONE ABAIXO
