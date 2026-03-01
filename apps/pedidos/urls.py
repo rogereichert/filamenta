@@ -14,11 +14,16 @@ from .views import (
     pedido_calcular,
     pedido_enviar_email,
     pedido_pdf,
+    pedido_kanban,
+    pedido_kanban_move,
 )
 
 app_name = "pedidos"
 
 urlpatterns = [
+    path("kanban/", pedido_kanban, name="kanban"),
+    path("kanban/mover/", pedido_kanban_move, name="kanban_move"),
+
     path("", pedido_list, name="list"),
     path("novo/", pedido_create, name="create"),
     path("<int:pk>/", pedido_detail, name="detail"),

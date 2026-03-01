@@ -16,6 +16,7 @@ from .delete import pedido_delete
 from .pdf import pedido_pdf
 from .email import pedido_enviar_email
 from .calcular import pedido_calcular
+from .kanban import pedido_kanban, pedido_kanban_move
 
 __all__ = [
     "pedido_list",
@@ -31,4 +32,7 @@ __all__ = [
     "pedido_pdf",
     "pedido_enviar_email",
     "pedido_calcular",
+    "pedido_kanban",
+    "pedido_kanban_move",
 ]
+
