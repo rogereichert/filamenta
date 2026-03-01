@@ -66,6 +66,14 @@ class FilamentoConsumo(models.Model):
         related_name="reservas"
     )
 
+    pedido = models.ForeignKey(
+        "pedidos.Pedido",
+        on_delete=models.CASCADE,
+        related_name="filamento_consumos",
+        null=True,
+        blank=True,
+    )
+
     gramas_g = models.PositiveIntegerField()
     status = models.CharField(max_length=3, choices=STATUS, default="RES")
 

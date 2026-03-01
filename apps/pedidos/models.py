@@ -74,34 +74,130 @@ class Pedido(models.Model):
 
         return total
 
-    @transaction.atomic
-    def baixar_estoque_se_necessario(self):
-        """
-        Baixa do estoque quando virar ENTREGUE (apenas 1x).
-        Consome os filamentos a partir dos itens (PedidoItemFilamento).
-        """
-        if self.status != self.Status.ENTREGUE or self.estoque_baixado:
-            return
+    
+    def _referencia_consumo(self) -> str:
+        # Mantém compatibilidade com dados antigos que possam ter sido criados via "referencia"
+        return f"PEDIDO:{self.pk}"
 
-        from apps.filamentos.models import Filamento  # ✅ caminho correto
-
-        # agrega por filamento (mais eficiente)
-        consumos = (
+    def _totais_filamento_por_pedido(self):
+        """
+        Retorna um queryset agregando o consumo total (em gramas) por filamento, baseado nos itens do pedido.
+        """
+        return (
             PedidoItemFilamento.objects
             .filter(item__pedido=self)
             .values("filamento_id")
             .annotate(total_g=Coalesce(Sum("gramas_g"), 0))
         )
 
-        for c in consumos:
-            # ✅ atualização atômica no banco
+    @transaction.atomic
+    def sincronizar_reservas_filamento(self, *, criar_se_vazio: bool = False) -> None:
+        """
+        Cria/atualiza reservas (FilamentoConsumo) quando o pedido entra em EM_PRODUCAO.
+
+        - Cria/atualiza 1 reserva (status RES) por filamento do pedido.
+        - Cancelar reservas RES/RAS que não existem mais nos itens.
+        - Se 'criar_se_vazio' for True e não existirem reservas, cria reservas mesmo se o pedido não passou por EM_PRODUCAO.
+        """
+        from apps.filamentos.models import FilamentoConsumo
+
+        if not self.pk:
+            return
+
+        if self.status != self.Status.EM_PRODUCAO and not criar_se_vazio:
+            return
+
+        referencia = self._referencia_consumo()
+
+        totais = list(self._totais_filamento_por_pedido())
+        totais_map = {t["filamento_id"]: int(t["total_g"] or 0) for t in totais if int(t["total_g"] or 0) > 0}
+
+        # (1) Cancela reservas antigas que não existem mais nos itens
+        FilamentoConsumo.objects.filter(
+            pedido=self,
+            status__in=["RAS", "RES"],
+        ).exclude(
+            filamento_id__in=list(totais_map.keys()),
+        ).update(status="CAN")
+
+        # (2) Upsert das reservas atuais
+        for filamento_id, total_g in totais_map.items():
+            # Se existirem registros antigos (antes do FK), tenta vinculá-los
+            FilamentoConsumo.objects.filter(
+                pedido__isnull=True,
+                referencia=referencia,
+                filamento_id=filamento_id,
+                status="RES",
+            ).update(pedido=self)
+
+            obj, created = FilamentoConsumo.objects.get_or_create(
+                pedido=self,
+                filamento_id=filamento_id,
+                status="RES",
+                defaults={
+                    "gramas_g": total_g,
+                    "referencia": referencia,
+                },
+            )
+
+            if not created:
+                # Se já existia, sincroniza quantidade e referência (caso itens tenham mudado)
+                updates = {}
+                if obj.gramas_g != total_g:
+                    updates["gramas_g"] = total_g
+                if obj.referencia != referencia:
+                    updates["referencia"] = referencia
+                if updates:
+                    FilamentoConsumo.objects.filter(pk=obj.pk).update(**updates)
+
+    @transaction.atomic
+    def cancelar_reservas_filamento(self) -> None:
+        """Cancela reservas pendentes (RAS/RES) do pedido."""
+        from apps.filamentos.models import FilamentoConsumo
+
+        if not self.pk:
+            return
+
+        FilamentoConsumo.objects.filter(
+            pedido=self,
+            status__in=["RAS", "RES"],
+        ).update(status="CAN")
+
+    @transaction.atomic
+    def baixar_estoque_se_necessario(self) -> None:
+        """
+        Confirma reservas e baixa do estoque quando virar ENTREGUE (apenas 1x).
+
+        Fluxo:
+        - EM_PRODUCAO: cria/atualiza reservas (RES)
+        - ENTREGUE: transforma RES -> CON e baixa do estoque com base nos consumos confirmados
+        - CANCELADO: cancela reservas (RES/RAS)
+        """
+        if self.status != self.Status.ENTREGUE or self.estoque_baixado:
+            return
+
+        from apps.filamentos.models import Filamento, FilamentoConsumo  # ✅ caminho correto
+
+        # Se o pedido foi entregue sem passar por EM_PRODUCAO, criamos reservas agora para manter histórico
+        self.sincronizar_reservas_filamento(criar_se_vazio=True)
+
+        # Confirma tudo que estiver reservado/rascunho
+        FilamentoConsumo.objects.filter(
+            pedido=self,
+            status__in=["RAS", "RES"],
+        ).update(status="CON")
+
+        consumos_confirmados = (
+            FilamentoConsumo.objects
+            .filter(pedido=self, status="CON")
+            .values("filamento_id")
+            .annotate(total_g=Coalesce(Sum("gramas_g"), 0))
+        )
+
+        for c in consumos_confirmados:
             Filamento.objects.filter(pk=c["filamento_id"]).update(
                 peso_atual_g=Greatest(F("peso_atual_g") - c["total_g"], 0)
             )
-
-            # ✅ (Opcional) se você quiser evitar estoque negativo no banco,
-            # faça isso via constraint/validação ou com uma segunda query "clamp":
-            # Filamento.objects.filter(pk=c["filamento_id"], peso_atual_g__lt=0).update(peso_atual_g=0)
 
         self.estoque_baixado = True
         self.save(update_fields=["estoque_baixado", "updated_at"])
@@ -113,9 +209,27 @@ class Pedido(models.Model):
 
         super().save(*args, **kwargs)
 
-        # se mudou para entregue, baixa estoque
+        # ✅ Regras de transição de status (efeitos colaterais)
         if status_anterior != self.status:
-            self.baixar_estoque_se_necessario()
+            # Entrou em produção => cria/atualiza reservas
+            if self.status == self.Status.EM_PRODUCAO:
+                self.sincronizar_reservas_filamento()
+
+            # Saiu de produção (voltou) => libera reservas
+            if status_anterior == self.Status.EM_PRODUCAO and self.status in {
+                self.Status.RASCUNHO,
+                self.Status.ORCAMENTO,
+                self.Status.ABERTO,
+            }:
+                self.cancelar_reservas_filamento()
+
+            # Cancelado => cancela reservas pendentes
+            if self.status == self.Status.CANCELADO:
+                self.cancelar_reservas_filamento()
+
+            # Entregue => confirma e baixa estoque
+            if self.status == self.Status.ENTREGUE:
+                self.baixar_estoque_se_necessario()
 
 
 class PedidoItem(models.Model):
