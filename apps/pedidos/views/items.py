@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.contrib import messages
+from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 
 from ..forms import (
@@ -66,8 +67,7 @@ def pedido_item_add_calculado(request, pk):
 
     # registra consumo total (por item) se filamento foi selecionado
     if filamento:
-        from decimal import ROUND_HALF_UP
-        gramas_total = (resultado["gramas_cobradas"] * Decimal(cd["quantidade"]))
+        gramas_total = resultado["gramas_cobradas"] * Decimal(cd["quantidade"])
         gramas_int = int(gramas_total.to_integral_value(rounding=ROUND_HALF_UP))
         if gramas_int < 1:
             gramas_int = 1
@@ -95,6 +95,7 @@ def pedido_item_add_calculado(request, pk):
     )
     return redirect("pedidos:detail", pk=pedido.pk)
 
+
 def pedido_item_add(request, pk):
     pedido = get_object_or_404(Pedido, pk=pk)
     form = PedidoItemForm(request.POST or None)
@@ -110,6 +111,7 @@ def pedido_item_add(request, pk):
 
     return redirect("pedidos:detail", pk=pedido.pk)
 
+
 def pedido_item_remove(request, pk, item_id):
     pedido = get_object_or_404(Pedido, pk=pk)
     item = get_object_or_404(PedidoItem, pk=item_id, pedido=pedido)
@@ -117,6 +119,7 @@ def pedido_item_remove(request, pk, item_id):
     _recalc_pedido_total(pedido)
     messages.success(request, "Item removido.")
     return redirect("pedidos:detail", pk=pedido.pk)
+
 
 def item_filamento_add(request, pk, item_id):
     pedido = get_object_or_404(Pedido, pk=pk)
@@ -127,12 +130,39 @@ def item_filamento_add(request, pk, item_id):
     if request.method == "POST" and form.is_valid():
         itf = form.save(commit=False)
         itf.item = item
+
+        # ✅ Bloqueia consumo acima do estoque disponível (considera reservas de outros pedidos)
+        fil = itf.filamento
+
+        # total já existente no pedido para esse filamento
+        total_atual = (
+            PedidoItemFilamento.objects.filter(item__pedido=pedido, filamento=fil)
+            .aggregate(total=models.Sum("gramas_g"))["total"]
+            or 0
+        )
+        total_novo = int(total_atual) + int(itf.gramas_g or 0)
+
+        disponivel = (
+            fil.disponivel_g(exclude_pedido=pedido)
+            if hasattr(fil, "disponivel_g")
+            else int(fil.peso_atual_g)
+        )
+
+        if total_novo > disponivel:
+            messages.error(
+                request,
+                f"Estoque insuficiente para {fil}. Você tentou totalizar {total_novo}g neste pedido, "
+                f"mas o disponível é {disponivel}g."
+            )
+            return redirect("pedidos:detail", pk=pedido.pk)
+
         itf.save()
         messages.success(request, "Consumo de filamento adicionado ao item.")
     else:
         messages.error(request, "Verifique o filamento e as gramas informadas.")
 
     return redirect("pedidos:detail", pk=pedido.pk)
+
 
 def item_filamento_remove(request, pk, item_id, if_id):
     pedido = get_object_or_404(Pedido, pk=pk)
@@ -141,4 +171,3 @@ def item_filamento_remove(request, pk, item_id, if_id):
     itf.delete()
     messages.success(request, "Consumo de filamento removido do item.")
     return redirect("pedidos:detail", pk=pedido.pk)
-
