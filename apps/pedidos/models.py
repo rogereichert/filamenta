@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.db import models, transaction
+from django.core.exceptions import ValidationError
 from django.db.models import F, Sum
 from django.db.models.functions import Coalesce, Greatest
 
@@ -202,7 +203,67 @@ class Pedido(models.Model):
         self.estoque_baixado = True
         self.save(update_fields=["estoque_baixado", "updated_at"])
 
-    def save(self, *args, **kwargs):
+    
+
+    def _consumo_total_por_filamento(self):
+        """Retorna {filamento_id: {'filamento': Filamento, 'total_g': int}} para o pedido."""
+        from apps.filamentos.models import Filamento  # import local para evitar ciclos
+
+        qs = (
+            self.itens.values("filamentos__filamento")
+            .annotate(total_g=Coalesce(Sum("filamentos__gramas_g"), 0))
+            .filter(filamentos__filamento__isnull=False)
+        )
+        data = {}
+        for row in qs:
+            fid = row["filamentos__filamento"]
+            if not fid:
+                continue
+            data[fid] = {
+                "filamento": Filamento.objects.get(pk=fid),
+                "total_g": int(row["total_g"] or 0),
+            }
+        return data
+
+    def validar_estoque_para_producao(self):
+        """
+        Valida se existe estoque disponível suficiente para iniciar produção.
+        Considera reservas RES de outros pedidos (exclui este pedido).
+        """
+        faltas = []
+        for fid, info in self._consumo_total_por_filamento().items():
+            filamento = info["filamento"]
+            necessario = int(info["total_g"])
+            disponivel = filamento.disponivel_g(exclude_pedido=self)
+            if necessario > disponivel:
+                faltas.append(
+                    f"- {filamento} • necessário {necessario}g, disponível {disponivel}g"
+                )
+
+        if faltas:
+            msg = "Estoque insuficiente para iniciar produção:\n" + "\n".join(faltas)
+            raise ValidationError({"status": msg})
+
+    def clean(self):
+        """
+        Bloqueia a transição para EM_PRODUÇÃO quando não há estoque disponível.
+        """
+        super().clean()
+
+        # Só valida ao tentar entrar em produção
+        entrando_em_producao = self.status == self.Status.EM_PRODUCAO
+        if not entrando_em_producao:
+            return
+
+        # Se já estava em produção, não bloqueia aqui (evita travar edição de outras infos)
+        if self.pk:
+            status_anterior = Pedido.objects.only("status").get(pk=self.pk).status
+            if status_anterior == self.Status.EM_PRODUCAO:
+                return
+
+        self.validar_estoque_para_producao()
+
+def save(self, *args, **kwargs):
         status_anterior = None
         if self.pk:
             status_anterior = Pedido.objects.only("status").get(pk=self.pk).status
