@@ -44,7 +44,7 @@
         {% endif %}
       </div>
 
-
+      {# ✅ Campos de produção (sem duplicar) #}
       <div>
         <label class="text-sm text-slate-400">Prazo de entrega</label>
         {{ form.prazo_entrega|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
@@ -74,31 +74,6 @@
         {{ form.titulo|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
         {% if form.titulo.errors %}
           <div class="mt-1 text-xs text-red-300">{{ form.titulo.errors|striptags }}</div>
-        {% endif %}
-      </div>
-
-
-      <div>
-        <label class="text-sm text-slate-400">Prazo de entrega</label>
-        {{ form.prazo_entrega|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
-        {% if form.prazo_entrega.errors %}
-          <div class="mt-1 text-xs text-red-300">{{ form.prazo_entrega.errors|striptags }}</div>
-        {% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-400">Prioridade</label>
-        {{ form.prioridade|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
-        {% if form.prioridade.errors %}
-          <div class="mt-1 text-xs text-red-300">{{ form.prioridade.errors|striptags }}</div>
-        {% endif %}
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-400">Tempo estimado (horas)</label>
-        {{ form.tempo_estimado_h|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60" }}
-        {% if form.tempo_estimado_h.errors %}
-          <div class="mt-1 text-xs text-red-300">{{ form.tempo_estimado_h.errors|striptags }}</div>
         {% endif %}
       </div>
 
