@@ -14,6 +14,12 @@ class Pedido(models.Model):
         ENTREGUE = "entregue", "Entregue"
         CANCELADO = "cancelado", "Cancelado"
 
+    class Prioridade(models.TextChoices):
+        BAIXA = "baixa", "Baixa"
+        MEDIA = "media", "Média"
+        ALTA = "alta", "Alta"
+        URGENTE = "urgente", "Urgente"
+
     cliente = models.ForeignKey(
         "clientes.Cliente",
         on_delete=models.PROTECT,
@@ -25,6 +31,18 @@ class Pedido(models.Model):
         choices=Status.choices,
         default=Status.RASCUNHO,
     )
+
+    # ✅ produção / kanban
+    prazo_entrega = models.DateField(null=True, blank=True)
+    prioridade = models.CharField(
+        max_length=10,
+        choices=Prioridade.choices,
+        default=Prioridade.MEDIA,
+    )
+    # horas estimadas (ex.: 2.50h)
+    tempo_estimado_h = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
+    # ordenação dentro das colunas do kanban (menor = primeiro)
+    kanban_order = models.IntegerField(default=0)
 
     # ✅ descrição geral do pedido (ex: "Bonecos 3D - DC")
     titulo = models.CharField(max_length=120, blank=True, default="")
