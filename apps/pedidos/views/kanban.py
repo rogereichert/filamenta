@@ -7,7 +7,8 @@ from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
-
+from decimal import Decimal
+from django.db.models import Sum, Value, DecimalField, IntegerField
 from ..models import Pedido
 
 
@@ -24,26 +25,38 @@ KANBAN_STATUSES = [
 def pedido_kanban(request):
     qs = (
         Pedido.objects.select_related("cliente")
+        .prefetch_related("itens")
         .annotate(
-            total_gramas=Coalesce(Sum("itens__filamentos__gramas_g"), 0),
-            tempo_total_h=Coalesce(Sum("itens__tempo_horas"), 0),
+            # ✅ consumo total (gramas) -> inteiro
+            consumo_total_g=Coalesce(
+                Sum("itens__filamentos__gramas_g"),
+                Value(0, output_field=IntegerField()),
+                output_field=IntegerField(),
+            ),
+            # ✅ tempo total (horas) -> decimal
+            tempo_total_h=Coalesce(
+                Sum("itens__tempo_horas"),
+                Value(Decimal("0.00"), output_field=DecimalField(max_digits=10, decimal_places=2)),
+                output_field=DecimalField(max_digits=10, decimal_places=2),
+            ),
         )
-        .order_by("status", "kanban_order", "-prioridade", "-id")
+        .order_by("status", "kanban_order", "-id")
     )
 
-    colunas = {s: [] for s in KANBAN_STATUSES}
+    colunas = {
+        "RASCUNHO": [],
+        "ORCAMENTO": [],
+        "ABERTO": [],
+        "EM_PRODUCAO": [],
+        "ENTREGUE": [],
+    }
+
     for p in qs:
-        if p.status in colunas:
-            colunas[p.status].append(p)
+        # garante chave existente (caso algum status antigo exista no banco)
+        colunas.setdefault(p.status, [])
+        colunas[p.status].append(p)
 
-    return render(
-        request,
-        "pedidos/kanban.html",
-        {
-            "colunas": colunas,
-            "status_list": KANBAN_STATUSES,
-        },
-    )
+    return render(request, "pedidos/kanban.html", {"colunas": colunas})
 
 
 @require_POST
