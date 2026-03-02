@@ -12,8 +12,8 @@ class PedidoForm(forms.ModelForm):
         model = Pedido
         fields = [
             "cliente", "status",
+            "prazo_entrega", "prioridade",
             "titulo", "observacoes",
-            "prazo_entrega", "prioridade", "tempo_estimado_h",
             "desconto", "frete", "taxa_extra",
         ]
         widgets = {
@@ -23,16 +23,6 @@ class PedidoForm(forms.ModelForm):
             "observacoes": forms.Textarea(attrs={
                 "rows": 3,
                 "placeholder": "Detalhes do pedido, prazos, acabamento, pintura, etc.",
-            }),
-            
-            "prazo_entrega": forms.DateInput(attrs={
-                "type": "date",
-            }),
-            "prioridade": forms.Select(),
-            "tempo_estimado_h": forms.NumberInput(attrs={
-                "step": "0.01",
-                "min": "0",
-                "placeholder": "0,00",
             }),
             "desconto": forms.NumberInput(attrs={
                 "step": "0.01",
@@ -56,7 +46,7 @@ class PedidoForm(forms.ModelForm):
 class PedidoItemForm(forms.ModelForm):
     class Meta:
         model = PedidoItem
-        fields = ["descricao", "quantidade", "preco_unitario"]
+        fields = ["descricao", "quantidade", "tempo_horas", "preco_unitario"]
         widgets = {
             "descricao": forms.TextInput(attrs={
                 "placeholder": "Ex: Boneco Superman 3D",

@@ -63,6 +63,7 @@ def pedido_item_add_calculado(request, pk):
         descricao=cd["descricao"].strip(),
         quantidade=cd["quantidade"],
         preco_unitario=preco_unitario,
+        tempo_horas=(resultado["tempo_horas"] * Decimal(cd["quantidade"])).quantize(Decimal("0.01")),
     )
 
     # registra consumo total (por item) se filamento foi selecionado

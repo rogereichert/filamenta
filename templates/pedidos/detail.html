@@ -351,7 +351,13 @@
                           {{ form_item.quantidade|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500/40 transition" }}
                         </div>
 
+                        
                         <div class="md:col-span-3">
+                          <label class="text-xs text-slate-400">Tempo (horas)</label>
+                          {{ form_item.tempo_horas|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500/40 transition" }}
+                        </div>
+
+<div class="md:col-span-3">
                           <label class="text-xs text-slate-400">Preço (R$) *</label>
                           {{ form_item.preco_unitario|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500/40 transition" }}
                         </div>
@@ -375,7 +381,14 @@
                 </div>
 
                 <!-- RIGHT: PREVIEW -->
-                <div class="rounded-2xl border border-white/10 bg-white/5 p-5 h-fit">
+                
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+      <div class="text-sm text-slate-400">Tempo total estimado</div>
+      <div class="text-3xl font-bold mt-2 text-slate-100">{{ tempo_total_h|floatformat:2 }}h</div>
+      <div class="text-xs text-slate-500 mt-2">Soma do tempo estimado de todos os itens</div>
+    </div>
+
+<div class="rounded-2xl border border-white/10 bg-white/5 p-5 h-fit">
                   <div class="flex items-center justify-between">
                     <div class="font-semibold text-slate-100">Preview do cálculo</div>
                     <span class="text-xs px-2 py-0.5 rounded-full border border-violet-500/20 bg-violet-600/10 text-violet-200">
@@ -461,6 +474,8 @@
                 <span>Qtd: <span class="text-slate-200 font-medium">{{ item.quantidade }}</span></span>
                 <span class="text-white/10">|</span>
                 <span>Unit: <span class="text-slate-200 font-medium">R$ {{ item.preco_unitario|floatformat:2 }}</span></span>
+                <span class="text-white/10">|</span>
+                <span>Tempo: <span class="text-slate-200 font-medium">{{ item.tempo_horas|floatformat:2 }}h</span></span>
                 <span class="text-white/10">|</span>
                 <span>Subtotal: <span class="text-slate-200 font-medium">R$ {{ item.subtotal|floatformat:2 }}</span></span>
               </div>
@@ -618,6 +633,17 @@
             <div>
               <label class="text-xs text-slate-400">Status *</label>
               {{ form_header.status|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500/40 transition" }}
+            </div>
+
+
+            <div>
+              <label class="text-xs text-slate-400">Prazo de entrega</label>
+              {{ form_header.prazo_entrega|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500/40 transition" }}
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-400">Prioridade</label>
+              {{ form_header.prioridade|add_class:"w-full mt-1 px-4 py-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:border-violet-500/40 transition" }}
             </div>
 
             <div class="md:col-span-2">
