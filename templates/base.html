@@ -132,22 +132,14 @@
                 Pedidos
               </span>
             </a>
-
-            <!-- Kanban -->
             <a href="{% url 'pedidos:kanban' %}"
               class="group flex items-center gap-3 px-4 py-2 rounded-xl transition
-              {% if url_name == 'pedidos:kanban' %}
-                bg-violet-600/10 border border-violet-500/20
-              {% else %}
-                hover:bg-white/5
-              {% endif %}">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-300 group-hover:text-slate-100" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M4 6h6v12H4V6Zm10 0h6v7h-6V6Zm0 9h6v3h-6v-3Z" />
-              </svg>
-              <span class="{% if url_name == 'pedidos:kanban' %}text-slate-100{% else %}text-slate-200{% endif %}">
+              {% if url_name == 'pedidos:kanban' %}bg-white/10 border border-white/10{% else %}hover:bg-white/5 border border-transparent{% endif %}">
+              <span class="text-slate-300 group-hover:text-slate-200 text-sm">
                 Kanban
               </span>
             </a>
+
 
             <!-- Calcular Pedido -->
             <a href="{% url 'pedidos:calcular' %}"

@@ -18,6 +18,18 @@ def pedido_create(request):
         form = PedidoForm(request.POST)
         if form.is_valid():
             pedido = form.save()
+
+            # Define ordem inicial no Kanban (fim da coluna)
+            if pedido.kanban_order == 0:
+                from django.db.models import Max
+                max_ord = (
+                    Pedido.objects.filter(status=pedido.status)
+                    .exclude(pk=pedido.pk)
+                    .aggregate(m=Max("kanban_order"))["m"]
+                    or 0
+                )
+                pedido.kanban_order = int(max_ord) + 1
+                pedido.save(update_fields=["kanban_order"])
             _recalc_pedido_total(pedido)
             # ✅ se criou já como ENTREGUE (raro), baixa estoque
             pedido.baixar_estoque_se_necessario()

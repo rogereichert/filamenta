@@ -52,6 +52,12 @@ def pedido_detail(request, pk):
         .order_by("id")
     )
 
+    tempo_total_h = (
+        PedidoItem.objects
+        .filter(pedido=pedido)
+        .aggregate(total=Sum("tempo_horas"))
+    )["total"] or 0
+
     total_gramas = (
         PedidoItemFilamento.objects
         .filter(item__pedido=pedido)
@@ -59,6 +65,7 @@ def pedido_detail(request, pk):
     )["total"] or 0
 
     return render(request, "pedidos/detail.html", {
+        "tempo_total_h": tempo_total_h,
         "pedido": pedido,
         "itens": itens,
         "total_gramas": total_gramas,
